@@ -1,0 +1,2708 @@
+# Test Case YAML — KeeboHealth: SpO2, Temperature & Blood Sugar (RBS) Vitals
+# Canonical template: baseline-templates/templates/testing/test-case-baseline-template/Test_Case_YAML_Template.yaml
+# Spec: the Verification Plan — Haripriya_Verification_Test_Plan_LVEF... no —
+#       Desktop/keebohealth/Verification_Test_Plan_SpO2_Temp_RBS_KeeboHealth.md (Status: DRAFT, pending Manager/Checker review)
+# Source PRD: ~/Downloads/Including SpO2, Temp & RBS - Draft PRD.pdf (Draft, no version/date stated)
+# Author: HP (QA Engineer / Maker)
+#
+# PROCESS NOTE: the VP's own Entry Criteria (§8) says test-case authoring should follow VP
+# approval (Manager's PR merge). The VP is still Draft/pending review as of this file's authoring.
+# This test-case bank is derived now at HP's/Product's request as a working draft — it expands the
+# VP's §6.3 Test Combination Matrix (10 seed combinations) into atomic cases and additionally covers
+# every matrix in VP §6.1 (Feature testing scope, Config/flag, Outcome x State, Timing/coordination,
+# Segmentation, Notification, Performance). It should be re-validated once the VP itself is approved
+# and once the VP's own Open Issues (OI-1..OI-14, esp. OI-5, OI-8, OI-9, OI-10) are answered by Product.
+#
+# ID scheme: KH-<MODULE>-<NNN>. requirement_id uses the PRD's own (non-sequential) section IDs,
+# since no external tracking-ID system is named in the PRD (VP Open Issue OI-7).
+# environment.build: PRD/VP state no version number (VP Open Issue OI-1) — left as "Not specified (OI-1)".
+
+# ═══════════════════════════════════════════════════════════════════════════
+# MODULE: Vitals as Patient Tasks — PRD §2.1 / VP §6.1 Feature testing scope, Config-flag matrix
+# ═══════════════════════════════════════════════════════════════════════════
+test_case:
+  id: KH-TASK-001
+  title: SpO2, Temperature and Blood Sugar appear as patient tasks when enabled
+
+  metadata:
+    module: Vitals as Patient Tasks
+    feature: Task visibility
+    requirement_id: PRD-2.1
+    priority: High
+    severity: Critical
+    type: Functional
+    category: Positive
+    automation_candidate: true
+    tags: [tasks, spo2, temperature, blood-sugar, patient-app, smoke]
+
+  objective: >
+    Verify SpO2, Temperature and Blood Sugar each appear as a task on the Patient App task
+    list when enabled for the patient, per PRD §2.1 AC1 and VP §6.1 Config/flag matrix
+    ("Vital task enabled" row).
+
+  preconditions:
+    - Patient enrolled and authenticated in the Patient App.
+    - All three vitals (SpO2, Temperature, Blood Sugar) enabled for this patient.
+
+  test_data:
+    patient_id: QA-PT-001
+    vitals_enabled: [SpO2, Temperature, Blood Sugar]
+
+  environment:
+    application: KeeboHealth Patient Mobile App (tricare-mobile-flutter)
+    build: Not specified (OI-1)
+    environment: QA
+
+  steps:
+    - step: 1
+      action: Log in as the patient and open the task list.
+      expected_result: SpO2, Temperature and Blood Sugar each appear as a distinct pending task.
+    - step: 2
+      action: Inspect task ordering relative to any other pending tasks.
+      expected_result: Pending tasks remain on top (no premature reordering).
+
+  expected_result: >
+    All three enabled vitals surface as pending tasks on the Patient App.
+
+  postconditions:
+    - No task state changed by this case (read-only check).
+
+  validation:
+    ui:
+      - Task cards for SpO2, Temperature, Blood Sugar are visible and labeled correctly.
+    api:
+      - GET tasks endpoint returns all three vital tasks in pending state.
+    database: []
+    logs: []
+
+  automation:
+    framework: null
+    script_location: null
+    reusable_components: [PatientTaskListScreen]
+
+  traceability:
+    requirements: [PRD-2.1]
+    vp_scenario: ["§6.1 Feature testing scope", "§6.1 Config/flag matrix — Vital task enabled"]
+    risk: "Patient App Tasks & Manual Entry = HIGH (VP §3) — only capture path in scope, no device integration"
+    defects: []
+
+  execution:
+    executed_by:
+    execution_date:
+    status:
+    actual_result:
+    evidence:
+      screenshots: []
+      videos: []
+      logs: []
+
+  remarks: Baseline positive case underpinning all downstream task/entry cases.
+
+---
+test_case:
+  id: KH-TASK-002
+  title: Vital task disabled at patient level does not show on task list
+
+  metadata:
+    module: Vitals as Patient Tasks
+    feature: Task visibility
+    requirement_id: PRD-2.1
+    priority: High
+    severity: Major
+    type: Functional
+    category: Negative
+    automation_candidate: true
+    tags: [tasks, negative, config]
+
+  objective: >
+    Verify a vital task that is disabled for the patient does not appear on the task list,
+    per PRD §2.1 AC3 and VP §6.1 Config/flag matrix ("Vital task disabled" row).
+
+  preconditions:
+    - Patient enrolled and authenticated.
+    - Temperature task explicitly disabled for this patient (standard/non-mandatory cohort).
+
+  test_data:
+    patient_id: QA-PT-002
+    vitals_disabled: [Temperature]
+
+  environment:
+    application: KeeboHealth Patient Mobile App (tricare-mobile-flutter)
+    build: Not specified (OI-1)
+    environment: QA
+
+  steps:
+    - step: 1
+      action: Log in as the patient and open the task list.
+      expected_result: No Temperature task is present; other enabled vitals still show.
+
+  expected_result: >
+    A disabled vital produces zero UI footprint on the task list — no task, no entry possible.
+
+  postconditions:
+    - No task state changed.
+
+  validation:
+    ui:
+      - Temperature task absent from list.
+    api:
+      - GET tasks endpoint excludes Temperature for this patient.
+    database: []
+    logs: []
+
+  automation:
+    framework: null
+    script_location: null
+    reusable_components: [PatientTaskListScreen]
+
+  traceability:
+    requirements: [PRD-2.1]
+    vp_scenario: ["§6.1 Feature testing scope — Temperature OFF negative path", "§6.1 Config/flag matrix — Vital task disabled"]
+    risk: "Patient App Tasks & Manual Entry = HIGH (VP §3)"
+    defects: []
+
+  execution:
+    executed_by:
+    execution_date:
+    status:
+    actual_result:
+    evidence:
+      screenshots: []
+      videos: []
+      logs: []
+
+  remarks:
+
+---
+test_case:
+  id: KH-TASK-003
+  title: Completing a vital task timestamps the reading, moves it to completed, and Blood Sugar carries its reading-type tag
+
+  metadata:
+    module: Vitals as Patient Tasks
+    feature: Task completion
+    requirement_id: PRD-2.1
+    priority: High
+    severity: Critical
+    type: Functional
+    category: Positive
+    automation_candidate: true
+    tags: [tasks, completion, blood-sugar, reading-type]
+
+  objective: >
+    Verify marking a task complete timestamps the vital and moves the card to the completed
+    section (PRD §2.1 AC2), and that for Blood Sugar the reading type taken is recorded
+    against the value (PRD §2.1 AC4).
+
+  preconditions:
+    - Patient enrolled with SpO2 and Blood Sugar tasks enabled and pending.
+
+  test_data:
+    spo2_value: "97%"
+    blood_sugar_value: "110 mg/dL"
+    blood_sugar_reading_type: Fasting
+
+  environment:
+    application: KeeboHealth Patient Mobile App (tricare-mobile-flutter)
+    build: Not specified (OI-1)
+    environment: QA
+
+  steps:
+    - step: 1
+      action: Complete the SpO2 task with a valid in-range value.
+      expected_result: Task is timestamped and the card moves to the completed section.
+    - step: 2
+      action: Complete the Blood Sugar task, selecting reading type "Fasting".
+      expected_result: Task moves to completed; the saved record carries reading_type=Fasting against the value.
+
+  expected_result: >
+    Both tasks complete correctly; Blood Sugar's reading type is persisted alongside its value.
+
+  postconditions:
+    - Two new vital records exist, timestamped, provenance=Manual (or Task, per capture path).
+
+  validation:
+    ui:
+      - Completed cards appear in the completed section.
+    api:
+      - Task-complete calls return 200; vital record includes reading_type for Blood Sugar.
+    database:
+      - Blood Sugar row has a non-null reading_type column = "Fasting".
+    logs: []
+
+  automation:
+    framework: null
+    script_location: null
+    reusable_components: [PatientTaskListScreen, ManualEntryForm]
+
+  traceability:
+    requirements: [PRD-2.1]
+    vp_scenario: ["§6.1 Outcome x State matrix — Reading within range / Completed"]
+    risk: "Patient App Tasks & Manual Entry = HIGH (VP §3)"
+    defects: []
+
+  execution:
+    executed_by:
+    execution_date:
+    status:
+    actual_result:
+    evidence:
+      screenshots: []
+      videos: []
+      logs: []
+
+  remarks:
+
+# ═══════════════════════════════════════════════════════════════════════════
+# MODULE: Manual Entry Flow — PRD §2.2 / VP §6.3 rows 3, 6; §6.2 NFR Data Integrity
+# ═══════════════════════════════════════════════════════════════════════════
+---
+test_case:
+  id: KH-ENTRY-004
+  title: SpO2 manual entry — below-min, in-range, above-max values
+
+  metadata:
+    module: Manual Entry Flow
+    feature: SpO2 range validation
+    requirement_id: PRD-2.2
+    priority: High
+    severity: Critical
+    type: Functional
+    category: Edge
+    automation_candidate: true
+    tags: [manual-entry, spo2, boundary, equivalence-partitioning]
+
+  objective: >
+    Verify SpO2 manual entry accepts in-range values and rejects out-of-range values against
+    the stated range 50-100% (PRD §2.2 AC1), with provenance always recorded (AC2).
+
+  preconditions:
+    - Patient on the SpO2 manual entry form.
+
+  test_data:
+    below_min: "45%"
+    in_range: "97%"
+    above_max: "105%"
+
+  environment:
+    application: KeeboHealth Patient Mobile App (tricare-mobile-flutter)
+    build: Not specified (OI-1)
+    environment: QA
+
+  steps:
+    - step: 1
+      action: Enter 45% (below min) and attempt Save.
+      expected_result: Inline validation error shown; no record created.
+    - step: 2
+      action: Enter 97% (in range) and Save.
+      expected_result: Record created with timestamp, value=97%, unit=%, provenance=Manual.
+    - step: 3
+      action: Enter 105% (above max) and attempt Save.
+      expected_result: Inline validation error shown; no record created.
+
+  expected_result: >
+    Range validation correctly partitions below-min/above-max as rejected and in-range as accepted;
+    every successful save carries provenance=Manual.
+
+  postconditions:
+    - Exactly one new SpO2 record exists (the in-range save).
+
+  validation:
+    ui:
+      - Inline error text shown for both invalid attempts; non-intrusive success confirmation for the valid one.
+    api:
+      - Save call for invalid values returns a validation error (4xx); valid value returns 200/201.
+    database:
+      - Saved row has provenance=Manual, correct timestamp and unit.
+    logs: []
+
+  automation:
+    framework: null
+    script_location: null
+    reusable_components: [ManualEntryForm]
+
+  traceability:
+    requirements: [PRD-2.2]
+    vp_scenario: ["§6.3 row 3 — Equivalence Partitioning: manual entry below-min/in-range/above-max"]
+    risk: "Patient App Tasks & Manual Entry = HIGH (VP §3); Data Integrity NFR (VP §6.2)"
+    defects: []
+
+  execution:
+    executed_by:
+    execution_date:
+    status:
+    actual_result:
+    evidence:
+      screenshots: []
+      videos: []
+      logs: []
+
+  remarks:
+
+---
+test_case:
+  id: KH-ENTRY-005
+  title: Temperature manual entry — below-min, in-range, above-max values (°F per AC1)
+
+  metadata:
+    module: Manual Entry Flow
+    feature: Temperature range validation
+    requirement_id: PRD-2.2
+    priority: High
+    severity: Critical
+    type: Functional
+    category: Edge
+    automation_candidate: true
+    tags: [manual-entry, temperature, boundary, equivalence-partitioning, unit-ambiguity]
+
+  objective: >
+    Verify Temperature manual entry accepts in-range values and rejects out-of-range values
+    against the stated range 96.0-104.0 F (PRD §2.2 AC1). NOTE — VP Open Issue OI-5: the
+    threshold example elsewhere in the PRD (§2.6) uses Celsius; this case tests the manual-entry
+    form strictly as specified in °F and flags the inconsistency rather than silently resolving it.
+
+  preconditions:
+    - Patient on the Temperature manual entry form.
+    - Form unit is confirmed as °F for this build (verify before execution — OI-5 open).
+
+  test_data:
+    below_min: "94.0 F"
+    in_range: "99.5 F"
+    above_max: "106.0 F"
+
+  environment:
+    application: KeeboHealth Patient Mobile App (tricare-mobile-flutter)
+    build: Not specified (OI-1)
+    environment: QA
+
+  steps:
+    - step: 1
+      action: Enter 94.0 F (below min) and attempt Save.
+      expected_result: Inline validation error shown; no record created.
+    - step: 2
+      action: Enter 99.5 F (in range) and Save.
+      expected_result: Record created with timestamp, value=99.5, unit=F, provenance=Manual.
+    - step: 3
+      action: Enter 106.0 F (above max) and attempt Save.
+      expected_result: Inline validation error shown; no record created.
+
+  expected_result: >
+    Range validation correctly partitions below-min/above-max as rejected and in-range as accepted.
+
+  postconditions:
+    - Exactly one new Temperature record exists (the in-range save).
+
+  validation:
+    ui:
+      - Inline error text shown for both invalid attempts.
+    api:
+      - Save call for invalid values returns a validation error; valid value returns 200/201.
+    database:
+      - Saved row has provenance=Manual, unit recorded as entered.
+    logs: []
+
+  automation:
+    framework: null
+    script_location: null
+    reusable_components: [ManualEntryForm]
+
+  traceability:
+    requirements: [PRD-2.2]
+    vp_scenario: ["§6.3 row 3 — Equivalence Partitioning", "VP Open Issue OI-5 — Temperature unit inconsistency"]
+    risk: "Patient App Tasks & Manual Entry = HIGH (VP §3)"
+    defects: []
+
+  execution:
+    executed_by:
+    execution_date:
+    status:
+    actual_result:
+    evidence:
+      screenshots: []
+      videos: []
+      logs: []
+
+  remarks: Coordinate with KH-THRESH-018/019 area once OI-5 (unit) is resolved by Product — this case may need re-baselining to °C.
+
+---
+test_case:
+  id: KH-ENTRY-006
+  title: Blood Sugar (RBS) manual entry — below-min, in-range, above-max values
+
+  metadata:
+    module: Manual Entry Flow
+    feature: RBS range validation
+    requirement_id: PRD-2.2
+    priority: High
+    severity: Critical
+    type: Functional
+    category: Edge
+    automation_candidate: true
+    tags: [manual-entry, blood-sugar, boundary, equivalence-partitioning]
+
+  objective: >
+    Verify Blood Sugar manual entry accepts in-range values and rejects out-of-range values
+    against the stated range 40-600 mg/dL (PRD §2.2 AC1).
+
+  preconditions:
+    - Patient on the Blood Sugar manual entry form.
+
+  test_data:
+    below_min: "30 mg/dL"
+    in_range: "140 mg/dL"
+    above_max: "650 mg/dL"
+
+  environment:
+    application: KeeboHealth Patient Mobile App (tricare-mobile-flutter)
+    build: Not specified (OI-1)
+    environment: QA
+
+  steps:
+    - step: 1
+      action: Enter 30 mg/dL (below min) and attempt Save.
+      expected_result: Inline validation error shown; no record created.
+    - step: 2
+      action: Enter 140 mg/dL (in range) with reading type "Random" and Save.
+      expected_result: Record created with timestamp, value=140, unit=mg/dL, reading_type=Random, provenance=Manual.
+    - step: 3
+      action: Enter 650 mg/dL (above max) and attempt Save.
+      expected_result: Inline validation error shown; no record created.
+
+  expected_result: >
+    Range validation correctly partitions below-min/above-max as rejected and in-range as accepted.
+
+  postconditions:
+    - Exactly one new RBS record exists (the in-range save).
+
+  validation:
+    ui:
+      - Inline error text shown for both invalid attempts.
+    api:
+      - Save call for invalid values returns a validation error; valid value returns 200/201.
+    database:
+      - Saved row has provenance=Manual and reading_type populated.
+    logs: []
+
+  automation:
+    framework: null
+    script_location: null
+    reusable_components: [ManualEntryForm]
+
+  traceability:
+    requirements: [PRD-2.2]
+    vp_scenario: ["§6.3 row 3 — Equivalence Partitioning"]
+    risk: "Patient App Tasks & Manual Entry = HIGH (VP §3)"
+    defects: []
+
+  execution:
+    executed_by:
+    execution_date:
+    status:
+    actual_result:
+    evidence:
+      screenshots: []
+      videos: []
+      logs: []
+
+  remarks:
+
+---
+test_case:
+  id: KH-ENTRY-007
+  title: Blood Sugar entry requires selecting a reading type (Fasting / Random / Post-meal)
+
+  metadata:
+    module: Manual Entry Flow
+    feature: Reading-type selector
+    requirement_id: PRD-2.2
+    priority: Medium
+    severity: Major
+    type: Functional
+    category: Positive
+    automation_candidate: true
+    tags: [manual-entry, blood-sugar, reading-type]
+
+  objective: >
+    Verify that selecting the Blood Sugar task presents exactly three reading-type options
+    (Fasting, Random, Post-meal) and that the selected type is saved against the value,
+    per PRD §2.2 AC4.
+
+  preconditions:
+    - Patient on the Blood Sugar manual entry form.
+
+  test_data:
+    value: "180 mg/dL"
+    reading_type: Post-meal
+
+  environment:
+    application: KeeboHealth Patient Mobile App (tricare-mobile-flutter)
+    build: Not specified (OI-1)
+    environment: QA
+
+  steps:
+    - step: 1
+      action: Open the Blood Sugar manual entry form.
+      expected_result: Exactly three reading-type options are shown — Fasting, Random, Post-meal.
+    - step: 2
+      action: Select "Post-meal", enter 180 mg/dL, and Save.
+      expected_result: Record saved with reading_type=Post-meal against value=180.
+
+  expected_result: >
+    All three reading-type options are present and the selection is persisted with the value.
+
+  postconditions:
+    - One RBS record exists with reading_type=Post-meal.
+
+  validation:
+    ui:
+      - Reading-type selector shows exactly 3 options, correctly labeled.
+    api:
+      - Save payload/response includes reading_type field.
+    database:
+      - reading_type column = "Post-meal" on the new row.
+    logs: []
+
+  automation:
+    framework: null
+    script_location: null
+    reusable_components: [ManualEntryForm]
+
+  traceability:
+    requirements: [PRD-2.2]
+    vp_scenario: ["§2.2 AC4"]
+    risk: "Patient App Tasks & Manual Entry = HIGH (VP §3)"
+    defects: []
+
+  execution:
+    executed_by:
+    execution_date:
+    status:
+    actual_result:
+    evidence:
+      screenshots: []
+      videos: []
+      logs: []
+
+  remarks:
+
+---
+test_case:
+  id: KH-ENTRY-008
+  title: Blood Sugar entry attempted with no reading type selected (gap-filler, OI-8)
+
+  metadata:
+    module: Manual Entry Flow
+    feature: Reading-type selector
+    requirement_id: PRD-2.2
+    priority: Medium
+    severity: Major
+    type: Functional
+    category: Negative
+    automation_candidate: true
+    tags: [manual-entry, blood-sugar, reading-type, ambiguity, gap-filler]
+
+  objective: >
+    Verify system behavior when a patient attempts to save a Blood Sugar reading without
+    selecting a reading type. The PRD never states whether selection is mandatory (VP Open
+    Issue OI-8) — this case closes the ambiguity for testing purposes (Save is blocked/prompts
+    selection) and is flagged for Product confirmation before being treated as a hard pass/fail gate.
+
+  preconditions:
+    - Patient on the Blood Sugar manual entry form.
+    - No reading type pre-selected / default-selected.
+
+  test_data:
+    value: "160 mg/dL"
+    reading_type: null
+
+  environment:
+    application: KeeboHealth Patient Mobile App (tricare-mobile-flutter)
+    build: Not specified (OI-1)
+    environment: QA
+
+  steps:
+    - step: 1
+      action: Enter 160 mg/dL, leave reading type unselected, and attempt Save.
+      expected_result: >
+        ACTUAL BEHAVIOR TO BE OBSERVED AND REPORTED — expected assumption for this case
+        (pending Product confirmation) is that Save is blocked with a prompt to select a
+        reading type, since AC4 implies the tag is required data against the value.
+
+  expected_result: >
+    System behavior for a missing reading-type selection is documented and compared against
+    Product's eventual answer to OI-8; do not silently treat either outcome as correct.
+
+  postconditions:
+    - No record should be created without provenance for the reading-type field, pending Product's ruling.
+
+  validation:
+    ui:
+      - Behavior on Save-without-selection is captured (blocked vs. saved with null/default).
+    api:
+      - Response/status for a save attempt with reading_type omitted is recorded.
+    database:
+      - Whether a row is created, and with what reading_type value, is recorded.
+    logs: []
+
+  automation:
+    framework: null
+    script_location: null
+    reusable_components: [ManualEntryForm]
+
+  traceability:
+    requirements: [PRD-2.2]
+    vp_scenario: ["§6.3 row 6 — Negative/Error-Guessing: Blood Sugar entry with no reading-type selected"]
+    risk: "VP Open Issue OI-8 — ambiguity closed by QA for test design, flagged to Product"
+    defects: []
+
+  execution:
+    executed_by:
+    execution_date:
+    status:
+    actual_result:
+    evidence:
+      screenshots: []
+      videos: []
+      logs: []
+
+  remarks: Do not close OI-8 based on this test's result alone — escalate observed behavior to Product for confirmation it's intentional.
+
+# ═══════════════════════════════════════════════════════════════════════════
+# MODULE: "Add Manually" Speed Path — PRD §3.3 / VP §6.3 rows 7-8, §6.5 Regression
+# ═══════════════════════════════════════════════════════════════════════════
+---
+test_case:
+  id: KH-SPEED-009
+  title: '"Add manually" speed path continues to work for BP, HR and Weight'
+
+  metadata:
+    module: Add Manually Speed Path
+    feature: Device-timer skip
+    requirement_id: PRD-3.3
+    priority: Medium
+    severity: Minor
+    type: Functional
+    category: Positive
+    automation_candidate: true
+    tags: [speed-path, regression, bp, hr, weight]
+
+  objective: >
+    Verify the pre-existing "Add manually" speed path for BP, HR and Weight is unaffected by
+    this release — visible during an active device timer, cancels the timer, and records the
+    value identically to a normal manual entry (PRD §3.3 AC1-AC3).
+
+  preconditions:
+    - Patient has an active device-timed BP task.
+
+  test_data:
+    vital: BP
+    value: "120/80 mmHg"
+
+  environment:
+    application: KeeboHealth Patient Mobile App (tricare-mobile-flutter)
+    build: Not specified (OI-1)
+    environment: QA
+
+  steps:
+    - step: 1
+      action: Start the BP device timer, then tap "Add manually".
+      expected_result: Timer is cancelled; manual entry form opens immediately.
+    - step: 2
+      action: Enter 120/80 mmHg and Save.
+      expected_result: Value is recorded identically to a standard manual entry (provenance=Manual).
+
+  expected_result: >
+    Speed path continues to function exactly as before this release for BP/HR/Weight.
+
+  postconditions:
+    - One BP record created via the speed path.
+
+  validation:
+    ui:
+      - '"Add manually" visible during active timer; form opens on tap.'
+    api:
+      - Save behaves identically to standard manual entry endpoint/payload.
+    database:
+      - Record indistinguishable from a normal manual entry except capture path metadata (if tracked).
+    logs: []
+
+  automation:
+    framework: null
+    script_location: null
+    reusable_components: [DeviceTimedCard, ManualEntryForm]
+
+  traceability:
+    requirements: [PRD-3.3]
+    vp_scenario: ["§6.5 Regression — existing Add Manually speed path continues to work for BP/HR/Weight"]
+    risk: "Add Manually speed path = LOW (VP §3) — pre-existing feature, regression risk only"
+    defects: []
+
+  execution:
+    executed_by:
+    execution_date:
+    status:
+    actual_result:
+    evidence:
+      screenshots: []
+      videos: []
+      logs: []
+
+  remarks:
+
+---
+test_case:
+  id: KH-SPEED-010
+  title: '"Add manually" speed path is absent for SpO2, Temperature and Blood Sugar tasks (gap-filler, OI-9)'
+
+  metadata:
+    module: Add Manually Speed Path
+    feature: Device-timer skip
+    requirement_id: PRD-3.3
+    priority: Medium
+    severity: Minor
+    type: Functional
+    category: Negative
+    automation_candidate: true
+    tags: [speed-path, negative, gap-filler, spo2, temperature, blood-sugar]
+
+  objective: >
+    Verify the "Add manually" speed path is NOT shown for the three new vitals' tasks, per the
+    PRD's literal wording (§3.3 is scoped to BP, HR & Weight only). VP Open Issue OI-9 flags
+    this as possibly a drafting artifact rather than deliberate exclusion — test per the literal
+    PRD text and escalate if the build's actual behavior differs.
+
+  preconditions:
+    - Patient has SpO2, Temperature, and Blood Sugar tasks (none are device-timed, so no timer exists to begin with).
+
+  test_data: {}
+
+  environment:
+    application: KeeboHealth Patient Mobile App (tricare-mobile-flutter)
+    build: Not specified (OI-1)
+    environment: QA
+
+  steps:
+    - step: 1
+      action: Open each of the SpO2, Temperature, and Blood Sugar task cards.
+      expected_result: No device timer and no "Add manually" shortcut is shown — only the standard manual entry form (these vitals have no device capture path in scope).
+
+  expected_result: >
+    No speed-path affordance exists for the three new vitals, consistent with them having no
+    device-integration path in this release (PRD §1.3 Out of Scope).
+
+  postconditions:
+    - No records created.
+
+  validation:
+    ui:
+      - No "Add manually" button/timer artifact present on the three new vitals' cards.
+    api: []
+    database: []
+    logs: []
+
+  automation:
+    framework: null
+    script_location: null
+    reusable_components: [PatientTaskListScreen]
+
+  traceability:
+    requirements: [PRD-3.3]
+    vp_scenario: ["§6.3 row 8 — Regression: Add manually speed path stays absent for SpO2/Temp/RBS", "VP Open Issue OI-9"]
+    risk: "Add Manually speed path = LOW (VP §3)"
+    defects: []
+
+  execution:
+    executed_by:
+    execution_date:
+    status:
+    actual_result:
+    evidence:
+      screenshots: []
+      videos: []
+      logs: []
+
+  remarks: If the build actually shows a speed-path affordance for these vitals, treat as a finding against OI-9 rather than a silent pass/fail — escalate to Product.
+
+# ═══════════════════════════════════════════════════════════════════════════
+# MODULE: Treatment Plans (Doctor Panel) — PRD §4.4 / VP §6.3 row 4 (Decision Table), Segmentation matrix
+# ═══════════════════════════════════════════════════════════════════════════
+---
+test_case:
+  id: KH-COHORT-011
+  title: Enabling the Pulmonary cohort auto-populates the mandatory vitals bundle
+
+  metadata:
+    module: Treatment Plans
+    feature: Cohort bundling
+    requirement_id: PRD-4.4
+    priority: High
+    severity: Major
+    type: Functional
+    category: Positive
+    automation_candidate: true
+    tags: [doctor-panel, cohort, pulmonary, treatment-plan]
+
+  objective: >
+    Verify enabling the Pulmonary cohort for a patient auto-populates the required vitals
+    (ECG, SpO2, BP, Weight, RBS) as a mandatory bundle, and the Doctor Panel indicates which
+    vitals are mandatory due to cohort (PRD §4.4 AC1, AC3).
+
+  preconditions:
+    - Doctor authenticated in Doctor Panel with a patient not yet assigned a cohort.
+
+  test_data:
+    patient_id: QA-PT-011
+    cohort: Pulmonary
+
+  environment:
+    application: KeeboHealth Doctor Web Portal
+    build: Not specified (OI-1)
+    environment: QA
+
+  steps:
+    - step: 1
+      action: Assign the patient to the Pulmonary cohort/program via Treatment Plan.
+      expected_result: ECG, SpO2, BP, Weight and RBS are all auto-enabled as mandatory for this patient.
+    - step: 2
+      action: View the patient's Treatment Plan / vitals configuration.
+      expected_result: Doctor Panel visibly marks these five vitals as mandatory (cohort-driven), distinct from optional vitals.
+
+  expected_result: >
+    The full 5-vital mandatory bundle is applied automatically and clearly surfaced as
+    cohort-mandatory in the Doctor Panel.
+
+  postconditions:
+    - Patient now has 5 mandatory, cohort-driven vital tasks.
+
+  validation:
+    ui:
+      - Doctor Panel shows all 5 vitals flagged "mandatory (Pulmonary)".
+    api:
+      - Cohort-assignment call returns the updated vitals configuration for the patient.
+    database:
+      - Patient's vitals-config rows reflect mandatory=true, source=cohort for the 5 vitals.
+    logs: []
+
+  automation:
+    framework: null
+    script_location: null
+    reusable_components: [TreatmentPlanPanel]
+
+  traceability:
+    requirements: [PRD-4.4]
+    vp_scenario: ["§6.1 Segmentation matrix — Pulmonary cohort", "§6.1 Feature testing scope — SpO2/RBS Pulmonary locked ON"]
+    risk: "Treatment Plans / cohort bundling = MEDIUM (VP §3)"
+    defects: []
+
+  execution:
+    executed_by:
+    execution_date:
+    status:
+    actual_result:
+    evidence:
+      screenshots: []
+      videos: []
+      logs: []
+
+  remarks:
+
+---
+test_case:
+  id: KH-COHORT-012
+  title: Disabling a mandatory cohort vital is blocked without admin override
+
+  metadata:
+    module: Treatment Plans
+    feature: Mandatory-vital disable gating
+    requirement_id: PRD-4.4
+    priority: High
+    severity: Major
+    type: Functional
+    category: Negative
+    automation_candidate: true
+    tags: [doctor-panel, cohort, decision-table, admin-override]
+
+  objective: >
+    Verify a doctor cannot disable a mandatory cohort vital (e.g. RBS for a Pulmonary patient)
+    without an admin override, per PRD §4.4 AC2 and VP §6.3 row 4 (Decision Table — override
+    not granted).
+
+  preconditions:
+    - Patient in Pulmonary cohort with RBS mandatory.
+    - No admin override has been granted for this patient/vital.
+
+  test_data:
+    patient_id: QA-PT-012
+    cohort: Pulmonary
+    vital: RBS
+
+  environment:
+    application: KeeboHealth Doctor Web Portal
+    build: Not specified (OI-1)
+    environment: QA
+
+  steps:
+    - step: 1
+      action: As the treating doctor, attempt to disable RBS for this patient.
+      expected_result: Disable action is blocked; UI communicates that an admin override is required.
+
+  expected_result: >
+    Mandatory vitals cannot be disabled at patient level without an admin override.
+
+  postconditions:
+    - RBS remains enabled and mandatory for the patient.
+
+  validation:
+    ui:
+      - Disable control is blocked/disabled with an explanatory message.
+    api:
+      - Disable request without override returns an authorization/validation error.
+    database:
+      - Vitals-config row for RBS is unchanged (mandatory=true).
+    logs: []
+
+  automation:
+    framework: null
+    script_location: null
+    reusable_components: [TreatmentPlanPanel]
+
+  traceability:
+    requirements: [PRD-4.4]
+    vp_scenario: ["§6.3 row 4 — Decision Table: Cohort=Pulmonary x Vital=RBS x disable-attempt x override NOT granted"]
+    risk: "Treatment Plans / cohort bundling = MEDIUM (VP §3)"
+    defects: []
+
+  execution:
+    executed_by:
+    execution_date:
+    status:
+    actual_result:
+    evidence:
+      screenshots: []
+      videos: []
+      logs: []
+
+  remarks: '"Admin override" mechanism itself is undefined in the PRD (VP Open Issue OI-10) — this case tests the gate, not the override''s own grant workflow.'
+
+---
+test_case:
+  id: KH-COHORT-013
+  title: Disabling a mandatory cohort vital succeeds once admin override is granted
+
+  metadata:
+    module: Treatment Plans
+    feature: Mandatory-vital disable gating
+    requirement_id: PRD-4.4
+    priority: High
+    severity: Major
+    type: Functional
+    category: Positive
+    automation_candidate: true
+    tags: [doctor-panel, cohort, decision-table, admin-override]
+
+  objective: >
+    Verify a mandatory cohort vital CAN be disabled once an admin override has been granted,
+    per PRD §4.4 AC2 and VP §6.3 row 4 (Decision Table — override granted).
+
+  preconditions:
+    - Patient in Pulmonary cohort with RBS mandatory.
+    - Admin override has been granted for this patient/vital (mechanism per current build — OI-10).
+
+  test_data:
+    patient_id: QA-PT-013
+    cohort: Pulmonary
+    vital: RBS
+
+  environment:
+    application: KeeboHealth Doctor Web Portal
+    build: Not specified (OI-1)
+    environment: QA
+
+  steps:
+    - step: 1
+      action: With override granted, attempt to disable RBS for this patient.
+      expected_result: Disable succeeds; RBS task/task-config removed for this patient.
+
+  expected_result: >
+    A granted admin override allows the doctor to disable an otherwise-mandatory cohort vital.
+
+  postconditions:
+    - RBS is disabled for the patient; other mandatory vitals unaffected.
+
+  validation:
+    ui:
+      - RBS shown as disabled in Treatment Plan.
+    api:
+      - Disable request with valid override returns 200.
+    database:
+      - Vitals-config row for RBS updated to mandatory=false/disabled; override event recorded.
+    logs:
+      - Override grant and subsequent disable are both audit-logged (see KH-THRESH-017 for audit pattern).
+
+  automation:
+    framework: null
+    script_location: null
+    reusable_components: [TreatmentPlanPanel]
+
+  traceability:
+    requirements: [PRD-4.4]
+    vp_scenario: ["§6.3 row 4 — Decision Table: override GRANTED"]
+    risk: "Treatment Plans / cohort bundling = MEDIUM (VP §3)"
+    defects: []
+
+  execution:
+    executed_by:
+    execution_date:
+    status:
+    actual_result:
+    evidence:
+      screenshots: []
+      videos: []
+      logs: []
+
+  remarks: Depends on how the current build actually implements "admin override" — confirm mechanism before execution (OI-10).
+
+# ═══════════════════════════════════════════════════════════════════════════
+# MODULE: Baseline Capture at Enrollment — PRD §2.5 / VP §6.7 Test data (baseline-only patient)
+# ═══════════════════════════════════════════════════════════════════════════
+---
+test_case:
+  id: KH-BASE-014
+  title: Baseline SpO2, Temperature and RBS captured at enrollment surface in Patient Summary with date
+
+  metadata:
+    module: Baseline Capture
+    feature: Enrollment baseline
+    requirement_id: PRD-2.5
+    priority: Medium
+    severity: Major
+    type: Functional
+    category: Positive
+    automation_candidate: true
+    tags: [doctor-panel, enrollment, baseline]
+
+  objective: >
+    Verify the enrollment form accepts baseline SpO2, Temperature and RBS values, and these
+    surface in the Patient Summary with their capture date (PRD §2.5 AC1, AC2).
+
+  preconditions:
+    - Doctor mid-enrollment flow for a new patient.
+
+  test_data:
+    baseline_spo2: "96%"
+    baseline_temperature: "98.6 F"
+    baseline_rbs: "95 mg/dL"
+
+  environment:
+    application: KeeboHealth Doctor Web Portal
+    build: Not specified (OI-1)
+    environment: QA
+
+  steps:
+    - step: 1
+      action: Enter baseline SpO2, Temperature and RBS values during enrollment and complete enrollment.
+      expected_result: Enrollment succeeds; baseline values are stored.
+    - step: 2
+      action: Open the newly enrolled patient's Summary.
+      expected_result: All three baseline values are shown, each with its capture date.
+
+  expected_result: >
+    Baseline values are captured at enrollment and correctly surfaced in Patient Summary with date.
+
+  postconditions:
+    - Patient record has 3 baseline vital entries.
+
+  validation:
+    ui:
+      - Patient Summary shows baseline value + date for each of the 3 vitals.
+    api:
+      - Enrollment payload includes baseline fields; Summary endpoint returns them.
+    database:
+      - Baseline rows exist, flagged as baseline (vs. routine capture) if the schema distinguishes them.
+    logs: []
+
+  automation:
+    framework: null
+    script_location: null
+    reusable_components: [EnrollmentForm, PatientSummaryScreen]
+
+  traceability:
+    requirements: [PRD-2.5]
+    vp_scenario: ["§2.5 AC1, AC2"]
+    risk: "Baseline Capture & Summary Cards = MEDIUM (VP §3)"
+    defects: []
+
+  execution:
+    executed_by:
+    execution_date:
+    status:
+    actual_result:
+    evidence:
+      screenshots: []
+      videos: []
+      logs: []
+
+  remarks:
+
+---
+test_case:
+  id: KH-BASE-015
+  title: Patient with baseline-only data (no logged readings) shows correct empty state in Summary/graph
+
+  metadata:
+    module: Baseline Capture
+    feature: Empty-state display
+    requirement_id: PRD-2.7
+    priority: Low
+    severity: Minor
+    type: Functional
+    category: Edge
+    automation_candidate: false
+    tags: [doctor-panel, empty-state, summary]
+
+  objective: >
+    Verify a patient who has only an enrollment baseline (no logged readings since) shows the
+    documented empty-state indicator ("—") on Summary cards, per PRD §2.7 AC2, and that the
+    trend graph does not error on absent post-baseline data.
+
+  preconditions:
+    - Patient enrolled with baseline values only; zero task-based/manual readings since.
+
+  test_data:
+    patient_id: QA-PT-015
+
+  environment:
+    application: KeeboHealth Doctor Web Portal
+    build: Not specified (OI-1)
+    environment: QA
+
+  steps:
+    - step: 1
+      action: Open the patient's Summary.
+      expected_result: Summary cards for SpO2/Temperature/RBS show "—" for latest value/time (no crash, no misleading zero).
+    - step: 2
+      action: Open the patient's trend graph.
+      expected_result: Graph renders without error; shows no data points beyond baseline (or clearly marks baseline distinctly).
+
+  expected_result: >
+    Absence of post-baseline data is handled gracefully with the documented "—" indicator, not an error state.
+
+  postconditions:
+    - No data mutated.
+
+  validation:
+    ui:
+      - '"—" shown on Summary cards; graph does not error.'
+    api:
+      - Summary/graph endpoints return an explicit empty/null state rather than erroring.
+    database: []
+    logs:
+      - No application errors logged for this patient's data fetch.
+
+  automation:
+    framework: null
+    script_location: null
+    reusable_components: [PatientSummaryScreen, TrendGraphComponent]
+
+  traceability:
+    requirements: [PRD-2.7]
+    vp_scenario: ["§2.7 AC2", "§6.7 Test data — baseline-only patient"]
+    risk: "Baseline Capture & Summary Cards = MEDIUM (VP §3)"
+    defects: []
+
+  execution:
+    executed_by:
+    execution_date:
+    status:
+    actual_result:
+    evidence:
+      screenshots: []
+      videos: []
+      logs: []
+
+  remarks:
+
+# ═══════════════════════════════════════════════════════════════════════════
+# MODULE: Doctor-Configurable Thresholds — PRD §2.6 / VP §6.3 rows 1, 2, 10; Timing matrix
+# ═══════════════════════════════════════════════════════════════════════════
+---
+test_case:
+  id: KH-THRESH-016
+  title: Org-default thresholds load and doctor can override per patient
+
+  metadata:
+    module: Thresholds & Preferences
+    feature: Threshold configuration
+    requirement_id: PRD-2.6
+    priority: High
+    severity: Major
+    type: Functional
+    category: Positive
+    automation_candidate: true
+    tags: [doctor-panel, thresholds, configuration]
+
+  objective: >
+    Verify the Thresholds & Preferences panel loads org defaults and allows a per-patient
+    override, per PRD §2.6 AC1.
+
+  preconditions:
+    - Doctor Panel open on a patient's Thresholds & Preferences panel.
+    - Org default SpO2 threshold configured as "<92%".
+
+  test_data:
+    org_default_spo2: "<92%"
+    patient_override_spo2: "<90%"
+
+  environment:
+    application: KeeboHealth Doctor Web Portal
+    build: Not specified (OI-1)
+    environment: QA
+
+  steps:
+    - step: 1
+      action: Open the panel for a patient with no prior override.
+      expected_result: Org default (<92%) is shown as the active threshold.
+    - step: 2
+      action: Set a per-patient override of <90% and save.
+      expected_result: Save succeeds; the patient's threshold is now <90%, org default unaffected for other patients.
+
+  expected_result: >
+    Org defaults load correctly and a per-patient override is applied without affecting the org default.
+
+  postconditions:
+    - This patient's SpO2 threshold = <90%.
+
+  validation:
+    ui:
+      - Panel reflects <90% after save.
+    api:
+      - Save call returns 200; subsequent GET reflects the override.
+    database:
+      - Per-patient threshold override row created/updated; org-default row untouched.
+    logs: []
+
+  automation:
+    framework: null
+    script_location: null
+    reusable_components: [ThresholdsPanel]
+
+  traceability:
+    requirements: [PRD-2.6]
+    vp_scenario: ["§2.6 AC1"]
+    risk: "Doctor Web Portal Thresholds & Alerts = HIGH (VP §3) — patient-safety risk under ISO 14971"
+    defects: []
+
+  execution:
+    executed_by:
+    execution_date:
+    status:
+    actual_result:
+    evidence:
+      screenshots: []
+      videos: []
+      logs: []
+
+  remarks:
+
+---
+test_case:
+  id: KH-THRESH-017
+  title: Threshold change is audit-logged with who/what/when, including a subsequent revert
+
+  metadata:
+    module: Thresholds & Preferences
+    feature: Audit logging
+    requirement_id: PRD-2.6
+    priority: High
+    severity: Major
+    type: Functional
+    category: Positive
+    automation_candidate: true
+    tags: [doctor-panel, thresholds, audit, compliance]
+
+  objective: >
+    Verify a threshold change is audit-logged with who/what/when (PRD §2.6 AC3), and that a
+    subsequent revert is logged as a distinct event, per VP §6.3 row 10.
+
+  preconditions:
+    - Doctor authenticated; patient has an existing SpO2 threshold of <92%.
+
+  test_data:
+    changed_to: "<90%"
+    reverted_to: "<92%"
+
+  environment:
+    application: KeeboHealth Doctor Web Portal
+    build: Not specified (OI-1)
+    environment: QA
+
+  steps:
+    - step: 1
+      action: Change the SpO2 threshold from <92% to <90% and save.
+      expected_result: Audit log records doctor identity, old value, new value, and timestamp.
+    - step: 2
+      action: Revert the threshold back to <92% and save.
+      expected_result: A second, distinct audit entry records the revert (doctor identity, old=<90%, new=<92%, timestamp).
+
+  expected_result: >
+    Both the change and the revert are independently and correctly audit-logged.
+
+  postconditions:
+    - Two audit-log entries exist for this patient's SpO2 threshold; final threshold = <92%.
+
+  validation:
+    ui:
+      - Audit trail view (if present) shows both entries.
+    api:
+      - Audit-log endpoint returns both events in order.
+    database:
+      - Audit table has 2 rows: who, old_value, new_value, timestamp for each change.
+    logs: []
+
+  automation:
+    framework: null
+    script_location: null
+    reusable_components: [ThresholdsPanel, AuditLogView]
+
+  traceability:
+    requirements: [PRD-2.6]
+    vp_scenario: ["§6.3 row 10 — Audit/Compliance: threshold changed then reverted", "§6.2 NFR Auditability"]
+    risk: "Doctor Web Portal Thresholds & Alerts = HIGH (VP §3)"
+    defects: []
+
+  execution:
+    executed_by:
+    execution_date:
+    status:
+    actual_result:
+    evidence:
+      screenshots: []
+      videos: []
+      logs: []
+
+  remarks:
+
+---
+test_case:
+  id: KH-THRESH-018
+  title: SpO2 alert threshold boundary — 91% flags, 92%/93% do not
+
+  metadata:
+    module: Thresholds & Preferences
+    feature: Threshold boundary evaluation
+    requirement_id: PRD-2.6
+    priority: High
+    severity: Critical
+    type: Functional
+    category: Edge
+    automation_candidate: true
+    tags: [thresholds, boundary-value-analysis, spo2]
+
+  objective: >
+    Verify the SpO2 threshold "<92%" flags 91% and does not flag 92% or 93%, per VP §6.3 row 1
+    (Boundary Value Analysis). Exact operator semantics (strict-less-than) to be confirmed
+    against an SDS once one exists (VP Open Issue OI-5).
+
+  preconditions:
+    - Patient with SpO2 threshold configured as "<92%".
+
+  test_data:
+    values: ["91%", "92%", "93%"]
+
+  environment:
+    application: KeeboHealth Doctor Web Portal
+    build: Not specified (OI-1)
+    environment: QA
+
+  steps:
+    - step: 1
+      action: Submit an SpO2 reading of 91%.
+      expected_result: Flagged as out-of-range (low).
+    - step: 2
+      action: Submit an SpO2 reading of 92%.
+      expected_result: NOT flagged.
+    - step: 3
+      action: Submit an SpO2 reading of 93%.
+      expected_result: NOT flagged.
+
+  expected_result: >
+    Threshold evaluation is strict-less-than at the documented boundary, consistent across all three inputs.
+
+  postconditions:
+    - Three SpO2 records exist with correct flag states.
+
+  validation:
+    ui:
+      - Summary card flag badge matches expected state for each value.
+    api:
+      - Flag/severity field in the reading response matches expected state.
+    database:
+      - Flag state persisted correctly per reading.
+    logs: []
+
+  automation:
+    framework: null
+    script_location: null
+    reusable_components: [ThresholdEvaluationEngine]
+
+  traceability:
+    requirements: [PRD-2.6]
+    vp_scenario: ["§6.3 row 1 — BVA: SpO2 = 91/92/93 vs threshold <92%"]
+    risk: "Doctor Web Portal Thresholds & Alerts = HIGH (VP §3)"
+    defects: []
+
+  execution:
+    executed_by:
+    execution_date:
+    status:
+    actual_result:
+    evidence:
+      screenshots: []
+      videos: []
+      logs: []
+
+  remarks: If actual operator semantics differ (e.g. <=92 flags), file as a finding against OI-5, not a silent pass.
+
+---
+test_case:
+  id: KH-THRESH-019
+  title: RBS alert threshold boundary — 180 does not flag, 181 flags
+
+  metadata:
+    module: Thresholds & Preferences
+    feature: Threshold boundary evaluation
+    requirement_id: PRD-2.6
+    priority: High
+    severity: Critical
+    type: Functional
+    category: Edge
+    automation_candidate: true
+    tags: [thresholds, boundary-value-analysis, blood-sugar]
+
+  objective: >
+    Verify the RBS threshold ">180 mg/dL" does not flag 180 and does flag 181, per VP §6.3 row 2
+    (Boundary Value Analysis).
+
+  preconditions:
+    - Patient with RBS threshold configured as ">180 mg/dL".
+
+  test_data:
+    values: ["179 mg/dL", "180 mg/dL", "181 mg/dL"]
+
+  environment:
+    application: KeeboHealth Doctor Web Portal
+    build: Not specified (OI-1)
+    environment: QA
+
+  steps:
+    - step: 1
+      action: Submit an RBS reading of 179 mg/dL.
+      expected_result: NOT flagged.
+    - step: 2
+      action: Submit an RBS reading of 180 mg/dL.
+      expected_result: NOT flagged (boundary itself does not flag, per ">" operator).
+    - step: 3
+      action: Submit an RBS reading of 181 mg/dL.
+      expected_result: Flagged as out-of-range (high).
+
+  expected_result: >
+    Threshold evaluation is strict-greater-than at the documented boundary.
+
+  postconditions:
+    - Three RBS records exist with correct flag states.
+
+  validation:
+    ui:
+      - Summary card flag badge matches expected state for each value.
+    api:
+      - Flag/severity field in the reading response matches expected state.
+    database:
+      - Flag state persisted correctly per reading.
+    logs: []
+
+  automation:
+    framework: null
+    script_location: null
+    reusable_components: [ThresholdEvaluationEngine]
+
+  traceability:
+    requirements: [PRD-2.6]
+    vp_scenario: ["§6.3 row 2 — BVA: RBS = 179/180/181 vs threshold >180"]
+    risk: "Doctor Web Portal Thresholds & Alerts = HIGH (VP §3)"
+    defects: []
+
+  execution:
+    executed_by:
+    execution_date:
+    status:
+    actual_result:
+    evidence:
+      screenshots: []
+      videos: []
+      logs: []
+
+  remarks:
+
+---
+test_case:
+  id: KH-THRESH-020
+  title: Threshold changed concurrently with an incoming reading is evaluated against the updated threshold
+
+  metadata:
+    module: Thresholds & Preferences
+    feature: Concurrency / timing
+    requirement_id: PRD-2.6
+    priority: Medium
+    severity: Major
+    type: Functional
+    category: Edge
+    automation_candidate: false
+    tags: [thresholds, concurrency, timing]
+
+  objective: >
+    Verify that when a doctor changes a threshold at (or just before) the moment a reading
+    arrives, the reading is evaluated against the updated threshold, not a stale one, per PRD
+    §2.6 AC2 ("reflects immediately in flagging logic") and VP §6.1 Timing/coordination matrix.
+
+  preconditions:
+    - Patient with SpO2 threshold = <92%.
+    - A reading of 91% is queued/about to be submitted (simulated near-concurrent timing).
+
+  test_data:
+    old_threshold: "<92%"
+    new_threshold: "<90%"
+    incoming_reading: "91%"
+
+  environment:
+    application: KeeboHealth Doctor Web Portal + Patient Mobile App
+    build: Not specified (OI-1)
+    environment: QA
+
+  steps:
+    - step: 1
+      action: Change the threshold to <90% and, as close to simultaneously as the QA environment allows, submit an SpO2 reading of 91%.
+      expected_result: The reading is evaluated against <90% (the updated threshold), so 91% is NOT flagged.
+
+  expected_result: >
+    No stale-threshold evaluation occurs — the reading reflects the just-updated configuration.
+
+  postconditions:
+    - One SpO2 record exists, flag state consistent with the new threshold.
+
+  validation:
+    ui:
+      - Flag state on the reading matches the post-update threshold.
+    api:
+      - Timestamp ordering of the threshold-update and reading-evaluation calls is logged for verification.
+    database:
+      - No record shows evaluation against the stale threshold.
+    logs:
+      - Threshold-update and evaluation events are timestamped for race verification.
+
+  automation:
+    framework: null
+    script_location: null
+    reusable_components: [ThresholdsPanel, ThresholdEvaluationEngine]
+
+  traceability:
+    requirements: [PRD-2.6]
+    vp_scenario: ["§6.1 Timing/coordination matrix — Doctor edits threshold concurrently with an incoming reading"]
+    risk: "Doctor Web Portal Thresholds & Alerts = HIGH (VP §3)"
+    defects: []
+
+  execution:
+    executed_by:
+    execution_date:
+    status:
+    actual_result:
+    evidence:
+      screenshots: []
+      videos: []
+      logs: []
+
+  remarks: True concurrency is hard to force from the UI — consider an API-level race-condition variant if this is automated later.
+
+# ═══════════════════════════════════════════════════════════════════════════
+# MODULE: Patient Summary Cards — PRD §2.7
+# ═══════════════════════════════════════════════════════════════════════════
+---
+test_case:
+  id: KH-SUMMARY-021
+  title: Summary cards show latest value, time, and correct flag badge per vital
+
+  metadata:
+    module: Patient Summary Cards
+    feature: Summary card display
+    requirement_id: PRD-2.7
+    priority: Medium
+    severity: Major
+    type: Functional
+    category: Positive
+    automation_candidate: true
+    tags: [doctor-panel, summary, flag-badge]
+
+  objective: >
+    Verify the three new Summary cards (SpO2, Temperature, RBS) show the latest value, when
+    recorded, and a correct flag badge (normal/low/high), per PRD §2.7 AC1.
+
+  preconditions:
+    - Patient has at least one recent reading for each of SpO2, Temperature, RBS, spanning normal and out-of-range values.
+
+  test_data:
+    spo2_latest: "97% (normal)"
+    rbs_latest: "195 mg/dL (high)"
+
+  environment:
+    application: KeeboHealth Doctor Web Portal
+    build: Not specified (OI-1)
+    environment: QA
+
+  steps:
+    - step: 1
+      action: Open Patient Summary.
+      expected_result: SpO2 card shows 97%, correct recorded time, "normal" badge.
+    - step: 2
+      action: Inspect the RBS card.
+      expected_result: RBS card shows 195 mg/dL, correct recorded time, "high" badge.
+
+  expected_result: >
+    Each Summary card accurately reflects its vital's latest value, timestamp, and threshold-derived flag.
+
+  postconditions:
+    - No data mutated (read-only check).
+
+  validation:
+    ui:
+      - Value, time and badge correct for both vitals checked.
+    api:
+      - Summary endpoint returns matching value/time/flag fields.
+    database: []
+    logs: []
+
+  automation:
+    framework: null
+    script_location: null
+    reusable_components: [PatientSummaryScreen]
+
+  traceability:
+    requirements: [PRD-2.7]
+    vp_scenario: ["§2.7 AC1"]
+    risk: "Baseline Capture & Summary Cards = MEDIUM (VP §3)"
+    defects: []
+
+  execution:
+    executed_by:
+    execution_date:
+    status:
+    actual_result:
+    evidence:
+      screenshots: []
+      videos: []
+      logs: []
+
+  remarks:
+
+# ═══════════════════════════════════════════════════════════════════════════
+# MODULE: Vitals Trend Graphs — PRD §2.8 / VP §6.1 Performance matrix
+# ═══════════════════════════════════════════════════════════════════════════
+---
+test_case:
+  id: KH-GRAPH-022
+  title: Trend graph renders SpO2, Temperature and RBS with correct units and time windows
+
+  metadata:
+    module: Vitals Trend Graphs
+    feature: Graph rendering
+    requirement_id: PRD-2.8
+    priority: Medium
+    severity: Major
+    type: Functional
+    category: Positive
+    automation_candidate: true
+    tags: [trend-graph, spo2, temperature, blood-sugar]
+
+  objective: >
+    Verify the Vitals & Alerts graph renders SpO2 (%), Temperature (°C/°F), and RBS (mg/dL) as
+    selectable series with correct units and time axis across 7/30/90-day windows, per PRD §2.8 AC1.
+
+  preconditions:
+    - Patient has readings for all three vitals spanning at least 90 days.
+
+  test_data: {}
+
+  environment:
+    application: KeeboHealth Doctor Web Portal
+    build: Not specified (OI-1)
+    environment: QA
+
+  steps:
+    - step: 1
+      action: Select the SpO2 series and each of the 7/30/90-day windows in turn.
+      expected_result: Graph renders with % axis and correct point count/time range for each window.
+    - step: 2
+      action: Repeat for Temperature and RBS series.
+      expected_result: Each renders with its correct unit (°C/°F, mg/dL) and time axis.
+
+  expected_result: >
+    All three vitals render correctly as selectable series across all three time windows.
+
+  postconditions:
+    - No data mutated.
+
+  validation:
+    ui:
+      - Correct units/labels and point counts per window, per vital.
+    api:
+      - Graph-data endpoint returns correctly filtered/unit-tagged series per window.
+    database: []
+    logs: []
+
+  automation:
+    framework: null
+    script_location: null
+    reusable_components: [TrendGraphComponent]
+
+  traceability:
+    requirements: [PRD-2.8]
+    vp_scenario: ["§2.8 AC1"]
+    risk: "Trend Graphs = MEDIUM (VP §3)"
+    defects: []
+
+  execution:
+    executed_by:
+    execution_date:
+    status:
+    actual_result:
+    evidence:
+      screenshots: []
+      videos: []
+      logs: []
+
+  remarks:
+
+---
+test_case:
+  id: KH-GRAPH-023
+  title: Trend graph tooltip shows timestamp, value and source on hover
+
+  metadata:
+    module: Vitals Trend Graphs
+    feature: Tooltip
+    requirement_id: PRD-2.8
+    priority: Low
+    severity: Minor
+    type: Functional
+    category: Positive
+    automation_candidate: true
+    tags: [trend-graph, tooltip]
+
+  objective: >
+    Verify hovering a data point on the trend graph shows a tooltip with timestamp, value, and
+    source (manual/device), per PRD §2.8 AC2.
+
+  preconditions:
+    - Patient has at least one manual and, if applicable, one device-sourced reading plotted.
+
+  test_data: {}
+
+  environment:
+    application: KeeboHealth Doctor Web Portal
+    build: Not specified (OI-1)
+    environment: QA
+
+  steps:
+    - step: 1
+      action: Hover over a manually-entered data point.
+      expected_result: Tooltip shows correct timestamp, value, and source=Manual.
+
+  expected_result: >
+    Tooltip content is accurate and complete for the hovered point.
+
+  postconditions:
+    - No data mutated.
+
+  validation:
+    ui:
+      - Tooltip fields match the underlying record.
+    api: []
+    database: []
+    logs: []
+
+  automation:
+    framework: null
+    script_location: null
+    reusable_components: [TrendGraphComponent]
+
+  traceability:
+    requirements: [PRD-2.8]
+    vp_scenario: ["§2.8 AC2"]
+    risk: "Trend Graphs = MEDIUM (VP §3)"
+    defects: []
+
+  execution:
+    executed_by:
+    execution_date:
+    status:
+    actual_result:
+    evidence:
+      screenshots: []
+      videos: []
+      logs: []
+
+  remarks: PRD §2.8 tooltip spec doesn't state whether Blood Sugar's reading-type tag should also surface here (VP Open Issue OI-11) — note if it's absent, don't fail on that alone.
+
+---
+test_case:
+  id: KH-GRAPH-024
+  title: Trend graph filters persist across sessions per user
+
+  metadata:
+    module: Vitals Trend Graphs
+    feature: Filter persistence
+    requirement_id: PRD-2.8
+    priority: Low
+    severity: Minor
+    type: Functional
+    category: Positive
+    automation_candidate: true
+    tags: [trend-graph, persistence]
+
+  objective: >
+    Verify a doctor's selected graph filters (series, time window) persist across sessions,
+    per PRD §2.8 AC3.
+
+  preconditions:
+    - Doctor authenticated, viewing a patient's trend graph.
+
+  test_data:
+    filter: "RBS series, 30-day window"
+
+  environment:
+    application: KeeboHealth Doctor Web Portal
+    build: Not specified (OI-1)
+    environment: QA
+
+  steps:
+    - step: 1
+      action: Set filters to RBS series / 30-day window, then log out and log back in.
+      expected_result: On return to this patient's graph, the same filters (RBS / 30-day) are still applied.
+
+  expected_result: >
+    Filter selection is preserved per user across sessions.
+
+  postconditions:
+    - No data mutated.
+
+  validation:
+    ui:
+      - Filters shown as RBS/30-day after re-login.
+    api:
+      - User-preference/filter-state endpoint reflects the saved selection.
+    database:
+      - Filter preference persisted per user (not per browser/session only).
+    logs: []
+
+  automation:
+    framework: null
+    script_location: null
+    reusable_components: [TrendGraphComponent]
+
+  traceability:
+    requirements: [PRD-2.8]
+    vp_scenario: ["§2.8 AC3"]
+    risk: "Trend Graphs = MEDIUM (VP §3)"
+    defects: []
+
+  execution:
+    executed_by:
+    execution_date:
+    status:
+    actual_result:
+    evidence:
+      screenshots: []
+      videos: []
+      logs: []
+
+  remarks:
+
+---
+test_case:
+  id: KH-PERF-025
+  title: 90-day trend graph renders without visible hang under realistic reading volume
+
+  metadata:
+    module: Vitals Trend Graphs
+    feature: Performance
+    requirement_id: PRD-2.8
+    priority: Low
+    severity: Minor
+    type: Non-Functional
+    category: Edge
+    automation_candidate: false
+    tags: [performance, trend-graph, deferred]
+
+  objective: >
+    Qualitative check that the 90-day trend graph loads without a visible hang or error under a
+    realistic reading volume. No numeric target exists in the PRD (VP Open Issue OI-3) — this is
+    a qualitative pass only, with formal PERF sign-off explicitly deferred until an SDS defines a
+    threshold (VP §6.1 Performance matrix).
+
+  preconditions:
+    - Patient with ~90 days of daily readings for all three vitals (realistic volume).
+
+  test_data: {}
+
+  environment:
+    application: KeeboHealth Doctor Web Portal
+    build: Not specified (OI-1)
+    environment: PERF (or QA if PERF env unconfirmed — see VP §9)
+
+  steps:
+    - step: 1
+      action: Load the 90-day trend graph for this patient and observe render behavior.
+      expected_result: Graph loads without a visible freeze, spinner-stall, or error — subjective/qualitative pass.
+
+  expected_result: >
+    No visible hang or error; this does NOT constitute formal performance sign-off pending a numeric SDS target.
+
+  postconditions:
+    - No data mutated.
+
+  validation:
+    ui:
+      - No visible hang/error observed.
+    api:
+      - Response time noted informally for future SDS-target comparison (not a pass/fail gate here).
+    database: []
+    logs: []
+
+  automation:
+    framework: null
+    script_location: null
+    reusable_components: [TrendGraphComponent]
+
+  traceability:
+    requirements: [PRD-2.8]
+    vp_scenario: ["§6.1 Performance matrix", "VP Open Issue OI-3 — no numeric Performance/Scalability target"]
+    risk: "Trend Graphs = MEDIUM (VP §3); formal PERF sign-off deferred"
+    defects: []
+
+  execution:
+    executed_by:
+    execution_date:
+    status:
+    actual_result:
+    evidence:
+      screenshots: []
+      videos: []
+      logs: []
+
+  remarks: Re-baseline this case with a real pass/fail threshold once SDS defines one (OI-3).
+
+# ═══════════════════════════════════════════════════════════════════════════
+# MODULE: Alerts (conditional on Smart Alerts engine) — PRD §2.9 / VP §6.1 Outcome x State, Notification matrix
+# ═══════════════════════════════════════════════════════════════════════════
+---
+test_case:
+  id: KH-ALERT-026
+  title: Threshold breach with Smart Alerts engine live generates a correctly-severity alert
+
+  metadata:
+    module: Alerts
+    feature: Alert generation
+    requirement_id: PRD-2.9
+    priority: High
+    severity: Critical
+    type: Functional
+    category: Positive
+    automation_candidate: true
+    tags: [alerts, smart-alerts, conditional]
+
+  objective: >
+    Verify an out-of-range reading generates an alert with correct severity, shown in Doctor
+    Panel (and via email if configured), when the Smart Alerts engine is live, per PRD §2.9 AC1
+    and VP §6.1 Outcome x State matrix.
+
+  preconditions:
+    - Smart Alerts engine confirmed LIVE in this environment (per VP §8 Entry Criteria).
+    - Patient with RBS threshold >180 mg/dL, email notification configured.
+
+  test_data:
+    rbs_value: "195 mg/dL"
+
+  environment:
+    application: KeeboHealth Doctor Web Portal + Backend
+    build: Not specified (OI-1)
+    environment: QA
+
+  steps:
+    - step: 1
+      action: Submit an RBS reading of 195 mg/dL (breaches threshold).
+      expected_result: Alert generated with correct severity; visible in Doctor Panel.
+    - step: 2
+      action: Check configured email delivery.
+      expected_result: One notification email delivered, no duplicate.
+
+  expected_result: >
+    A single, correctly-severity alert is generated and delivered through configured channels.
+
+  postconditions:
+    - One alert record exists for this event.
+
+  validation:
+    ui:
+      - Alert visible in Doctor Panel with correct severity.
+    api:
+      - Alert-creation event fired once for this reading.
+    database:
+      - One alert row, correct severity, linked to the reading.
+    logs:
+      - Email delivery log shows exactly one send.
+
+  automation:
+    framework: null
+    script_location: null
+    reusable_components: [AlertsPanel]
+
+  traceability:
+    requirements: [PRD-2.9]
+    vp_scenario: ["§6.1 Outcome x State matrix — Reading breaches threshold, Smart Alerts live", "§6.1 Notification matrix"]
+    risk: "Doctor Web Portal Thresholds & Alerts = HIGH (VP §3)"
+    defects: []
+
+  execution:
+    executed_by:
+    execution_date:
+    status:
+    actual_result:
+    evidence:
+      screenshots: []
+      videos: []
+      logs: []
+
+  remarks: Depends on the Smart Alerts engine's live/not-live status being confirmed before execution (VP §8 Entry Criteria).
+
+---
+test_case:
+  id: KH-ALERT-027
+  title: Threshold breach with Smart Alerts engine NOT live shows the flag but no alert, without blocking other vitals features
+
+  metadata:
+    module: Alerts
+    feature: Alert generation — degraded/conditional mode
+    requirement_id: PRD-2.9
+    priority: High
+    severity: Critical
+    type: Functional
+    category: Edge
+    automation_candidate: true
+    tags: [alerts, smart-alerts, conditional, critical-edge-case]
+
+  objective: >
+    Verify that when the Smart Alerts engine is NOT live, an out-of-range reading still shows
+    its flag badge, but generates NO alert, and that this does not block or degrade §2.1-2.8
+    behavior — per PRD §2.9 AC4, the release's most important conditional-scoping rule.
+
+  preconditions:
+    - Smart Alerts engine confirmed NOT LIVE in this environment.
+    - Patient with RBS threshold >180 mg/dL.
+
+  test_data:
+    rbs_value: "195 mg/dL"
+
+  environment:
+    application: KeeboHealth Doctor Web Portal + Backend
+    build: Not specified (OI-1)
+    environment: QA
+
+  steps:
+    - step: 1
+      action: Submit an RBS reading of 195 mg/dL (breaches threshold) with the engine confirmed not live.
+      expected_result: Summary card flag badge shows "high"; no alert is generated (no Doctor Panel alert entry, no email).
+    - step: 2
+      action: Verify Task, Manual Entry, Summary Card, and Trend Graph features (§2.1-2.8) for this patient still function normally.
+      expected_result: All unaffected — this FR being disabled does not degrade or block any other in-scope feature.
+
+  expected_result: >
+    Alerting cleanly no-ops when the engine isn't live; every other feature in scope is fully functional.
+
+  postconditions:
+    - Reading recorded and flagged; zero alert records created.
+
+  validation:
+    ui:
+      - Flag badge correct; no alert UI element present.
+    api:
+      - No alert-creation call/event fired.
+    database:
+      - Reading row flagged; zero rows in alerts table for this event.
+    logs:
+      - No alert-related errors; feature no-ops cleanly (not a silent failure elsewhere).
+
+  automation:
+    framework: null
+    script_location: null
+    reusable_components: [AlertsPanel, PatientSummaryScreen]
+
+  traceability:
+    requirements: [PRD-2.9]
+    vp_scenario: ["§6.1 Outcome x State matrix — Reading breaches threshold, Smart Alerts NOT live", "PRD §2.9 AC4"]
+    risk: "Doctor Web Portal Thresholds & Alerts = HIGH (VP §3) — this is the release's key conditional-scope gate"
+    defects: []
+
+  execution:
+    executed_by:
+    execution_date:
+    status:
+    actual_result:
+    evidence:
+      screenshots: []
+      videos: []
+      logs: []
+
+  remarks: This is the highest-priority edge case in the Alerts module — a failure here means the whole release could be incorrectly gated on Smart Alerts readiness.
+
+---
+test_case:
+  id: KH-ALERT-028
+  title: Repeated threshold breach within the same episode is deduplicated
+
+  metadata:
+    module: Alerts
+    feature: Deduplication
+    requirement_id: PRD-2.9
+    priority: High
+    severity: Major
+    type: Functional
+    category: Positive
+    automation_candidate: true
+    tags: [alerts, dedup, reliability]
+
+  objective: >
+    Verify repeated out-of-range readings for the same breach episode do not generate duplicate
+    alerts, per PRD §2.9 AC2 and VP §6.1 Notification matrix.
+
+  preconditions:
+    - Smart Alerts engine LIVE.
+    - Patient with SpO2 threshold <92%.
+
+  test_data:
+    readings: ["89%", "88%", "90%"]
+
+  environment:
+    application: KeeboHealth Doctor Web Portal + Backend
+    build: Not specified (OI-1)
+    environment: QA
+
+  steps:
+    - step: 1
+      action: Submit three consecutive out-of-range SpO2 readings (89%, 88%, 90%) within the same episode window.
+      expected_result: Only one alert is generated/delivered for the episode; no duplicate notifications.
+
+  expected_result: >
+    Multiple readings within the same breach episode produce a single deduplicated alert.
+
+  postconditions:
+    - One alert record for the episode, regardless of reading count.
+
+  validation:
+    ui:
+      - Doctor Panel shows one active alert for the episode.
+    api:
+      - Alert-creation fired once; subsequent breaches in-episode suppressed.
+    database:
+      - One alert row for the episode.
+    logs:
+      - Suppression events logged for the 2nd/3rd readings.
+
+  automation:
+    framework: null
+    script_location: null
+    reusable_components: [AlertsPanel]
+
+  traceability:
+    requirements: [PRD-2.9]
+    vp_scenario: ["§6.1 Notification matrix — Repeated breach, same episode"]
+    risk: "Doctor Web Portal Thresholds & Alerts = HIGH (VP §3)"
+    defects: []
+
+  execution:
+    executed_by:
+    execution_date:
+    status:
+    actual_result:
+    evidence:
+      screenshots: []
+      videos: []
+      logs: []
+
+  remarks: Exact episode-window definition isn't specified in the PRD — confirm the build's actual dedup window before treating a boundary case as a defect.
+
+---
+test_case:
+  id: KH-ALERT-029
+  title: New critical alert is not blocked by a prior unaddressed alert
+
+  metadata:
+    module: Alerts
+    feature: Alert independence
+    requirement_id: PRD-2.9
+    priority: High
+    severity: Critical
+    type: Functional
+    category: Positive
+    automation_candidate: true
+    tags: [alerts, reliability, critical]
+
+  objective: >
+    Verify a new critical alert is generated and delivered even while a prior alert for this
+    patient remains unaddressed, per PRD §2.9 AC2 ("do not block new critical alerts due to
+    prior unaddressed ones") and VP §6.1 Notification matrix.
+
+  preconditions:
+    - Smart Alerts engine LIVE.
+    - Patient has one existing unaddressed/unacknowledged alert.
+
+  test_data:
+    new_breach: "RBS 250 mg/dL (severe)"
+
+  environment:
+    application: KeeboHealth Doctor Web Portal + Backend
+    build: Not specified (OI-1)
+    environment: QA
+
+  steps:
+    - step: 1
+      action: With the prior alert still unaddressed, submit a new, distinct critical breach (RBS 250 mg/dL).
+      expected_result: A second, independent alert is generated and delivered; delivery is not withheld due to the unaddressed prior alert.
+
+  expected_result: >
+    Two independent alerts co-exist; the new critical one is delivered without delay/blocking.
+
+  postconditions:
+    - Two alert records exist for this patient.
+
+  validation:
+    ui:
+      - Doctor Panel shows both alerts, both actionable.
+    api:
+      - New alert-creation call succeeds independently of the prior alert's ack state.
+    database:
+      - Two distinct alert rows.
+    logs: []
+
+  automation:
+    framework: null
+    script_location: null
+    reusable_components: [AlertsPanel]
+
+  traceability:
+    requirements: [PRD-2.9]
+    vp_scenario: ["§6.1 Notification matrix — New critical breach while a prior one is unaddressed"]
+    risk: "Doctor Web Portal Thresholds & Alerts = HIGH (VP §3)"
+    defects: []
+
+  execution:
+    executed_by:
+    execution_date:
+    status:
+    actual_result:
+    evidence:
+      screenshots: []
+      videos: []
+      logs: []
+
+  remarks:
+
+# ═══════════════════════════════════════════════════════════════════════════
+# MODULE: Reminders & Compliance — PRD FR-10 / VP §6.1 Outcome x State matrix
+# ═══════════════════════════════════════════════════════════════════════════
+---
+test_case:
+  id: KH-REMIND-030
+  title: Due reminder fires at the configured time and can be dismissed or snoozed
+
+  metadata:
+    module: Reminders & Compliance
+    feature: Reminder delivery
+    requirement_id: PRD-FR-10
+    priority: Low
+    severity: Minor
+    type: Functional
+    category: Positive
+    automation_candidate: false
+    tags: [reminders, patient-app]
+
+  objective: >
+    Verify a due reminder fires at its configured time, and the patient can dismiss or snooze
+    it, per PRD FR-10 AC1.
+
+  preconditions:
+    - Patient has a pending task with a configured reminder time reached.
+    - Reminder channel is opted-in for this patient.
+
+  test_data: {}
+
+  environment:
+    application: KeeboHealth Patient Mobile App (tricare-mobile-flutter)
+    build: Not specified (OI-1)
+    environment: QA
+
+  steps:
+    - step: 1
+      action: Reach the configured reminder time for a pending task.
+      expected_result: Reminder fires (in-app notification).
+    - step: 2
+      action: Dismiss the reminder, then trigger a second one and snooze it.
+      expected_result: Both actions are honored — dismiss clears it; snooze re-fires later per configured snooze interval.
+
+  expected_result: >
+    Reminders fire on schedule and both dismiss and snooze work as expected.
+
+  postconditions:
+    - Reminder state reflects the last action taken.
+
+  validation:
+    ui:
+      - Reminder notification appears; dismiss/snooze controls work.
+    api:
+      - Reminder-fired event logged; dismiss/snooze calls succeed.
+    database: []
+    logs: []
+
+  automation:
+    framework: null
+    script_location: null
+    reusable_components: [ReminderService]
+
+  traceability:
+    requirements: [PRD-FR-10]
+    vp_scenario: ["FR-10 AC1"]
+    risk: "Reminders & Compliance = LOW (VP §3)"
+    defects: []
+
+  execution:
+    executed_by:
+    execution_date:
+    status:
+    actual_result:
+    evidence:
+      screenshots: []
+      videos: []
+      logs: []
+
+  remarks:
+
+---
+test_case:
+  id: KH-REMIND-031
+  title: A task left past due rolls to pending/missed and is surfaced in Doctor Panel compliance view
+
+  metadata:
+    module: Reminders & Compliance
+    feature: Missed-task visibility
+    requirement_id: PRD-FR-10
+    priority: Medium
+    severity: Major
+    type: Functional
+    category: Edge
+    automation_candidate: true
+    tags: [reminders, compliance, missed-task, state-transition]
+
+  objective: >
+    Verify a task left past due rolls over and is marked "pending"/missed for care-team
+    visibility, and is surfaced in the Doctor Panel's compliance view, per PRD FR-10 AC2 and
+    VP §6.1 Outcome x State matrix ("Task left past due" row) and §6.3 row 5 (State Transition:
+    not-started -> completed -> missed).
+
+  preconditions:
+    - Patient has a task whose due window has fully elapsed without completion.
+
+  test_data: {}
+
+  environment:
+    application: KeeboHealth Patient Mobile App + Doctor Web Portal
+    build: Not specified (OI-1)
+    environment: QA
+
+  steps:
+    - step: 1
+      action: Allow a task's due window to elapse without completing it.
+      expected_result: Task rolls over and is marked "pending"/missed (not silently disappearing).
+    - step: 2
+      action: Open the Doctor Panel compliance view for this patient.
+      expected_result: The missed task is visible to the care team.
+
+  expected_result: >
+    Missed tasks are neither dropped nor hidden — they roll over and are surfaced to the care team.
+
+  postconditions:
+    - Task state = missed/pending; visible in compliance view.
+
+  validation:
+    ui:
+      - Task shows "pending"/missed state in Patient App; visible in Doctor Panel compliance view.
+    api:
+      - Task-state transition event recorded (not-started -> missed).
+    database:
+      - Task row status reflects missed/pending, not deleted.
+    logs: []
+
+  automation:
+    framework: null
+    script_location: null
+    reusable_components: [PatientTaskListScreen, ComplianceView]
+
+  traceability:
+    requirements: [PRD-FR-10]
+    vp_scenario: ["§6.1 Outcome x State matrix — Task left past due / Missed", "§6.3 row 5 — State Transition"]
+    risk: "Reminders & Compliance = LOW (VP §3)"
+    defects: []
+
+  execution:
+    executed_by:
+    execution_date:
+    status:
+    actual_result:
+    evidence:
+      screenshots: []
+      videos: []
+      logs: []
+
+  remarks:
+
+# ═══════════════════════════════════════════════════════════════════════════
+# CROSS-CUTTING: Regression, Security/RBAC, Offline sync — VP §6.3 rows 7, 9; §6.5; Timing matrix
+# ═══════════════════════════════════════════════════════════════════════════
+---
+test_case:
+  id: KH-REG-032
+  title: Existing BP/Weight/HR task, manual-entry and trend-graph behavior is unaffected by this release
+
+  metadata:
+    module: Regression
+    feature: Existing vitals unaffected
+    requirement_id: PRD-6.5
+    priority: High
+    severity: Major
+    type: Functional
+    category: Positive
+    automation_candidate: true
+    tags: [regression, bp, weight, hr]
+
+  objective: >
+    Verify the pre-existing BP/Weight/HR task list, manual-entry form pattern, and trend-graph
+    component behave exactly as before this release, per VP §6.5 Regression Testing and §6.3 row 7.
+
+  preconditions:
+    - Patient with existing BP, Weight and HR tasks/history, and none of the three new vitals enabled.
+
+  test_data: {}
+
+  environment:
+    application: KeeboHealth Patient Mobile App + Doctor Web Portal
+    build: Not specified (OI-1)
+    environment: QA
+
+  steps:
+    - step: 1
+      action: Complete a BP task via manual entry as before.
+      expected_result: Behaves identically to pre-release (no regression in flow, validation, or storage).
+    - step: 2
+      action: View the existing BP/Weight trend graph.
+      expected_result: Renders exactly as before; unaffected by the new vitals' graph extension.
+
+  expected_result: >
+    No behavioral change to existing BP/Weight/HR flows or components.
+
+  postconditions:
+    - No new vital tasks appear for this patient.
+
+  validation:
+    ui:
+      - BP/Weight/HR task and graph UI identical to pre-release baseline.
+    api:
+      - Existing endpoints' request/response shapes unchanged for these vitals.
+    database:
+      - No schema-driven side effects on existing BP/Weight/HR records.
+    logs: []
+
+  automation:
+    framework: null
+    script_location: null
+    reusable_components: [PatientTaskListScreen, ManualEntryForm, TrendGraphComponent]
+
+  traceability:
+    requirements: [PRD-6.5]
+    vp_scenario: ["§6.5 Regression Testing", "§6.3 row 7 — Existing BP/Weight trend graph, unaffected"]
+    risk: "Database vitals schema/storage = HIGH (VP §3) — backward compatibility risk"
+    defects: []
+
+  execution:
+    executed_by:
+    execution_date:
+    status:
+    actual_result:
+    evidence:
+      screenshots: []
+      videos: []
+      logs: []
+
+  remarks:
+
+---
+test_case:
+  id: KH-RBAC-033
+  title: Doctor A cannot view Doctor B's patient's vitals
+
+  metadata:
+    module: Security / RBAC
+    feature: Cross-doctor access control
+    requirement_id: PRD-Security
+    priority: High
+    severity: Critical
+    type: Risk
+    category: Negative
+    automation_candidate: true
+    tags: [security, rbac, phi]
+
+  objective: >
+    Verify a doctor cannot view another doctor's patient's SpO2/Temperature/RBS data, per VP
+    §6.3 row 9 (Security/RBAC) and the general PHI-handling expectation in VP §6.2 NFR
+    Security/PHI (VP Open Issue OI-4 — not explicitly specified in the PRD, tested against
+    product's general security baseline).
+
+  preconditions:
+    - Doctor A and Doctor B each have distinct patient panels; Doctor B's patient has SpO2/Temperature/RBS data.
+
+  test_data:
+    doctor_a: qa.doctorA@tricog.test
+    doctor_b_patient_id: QA-PT-033
+
+  environment:
+    application: KeeboHealth Doctor Web Portal + Backend
+    build: Not specified (OI-1)
+    environment: STAGING/UAT (or QA if STAGING unconfirmed — VP §9)
+
+  steps:
+    - step: 1
+      action: Authenticated as Doctor A, attempt to navigate directly to Doctor B's patient's vitals (UI and direct API call).
+      expected_result: Access denied both in UI (not navigable/visible) and at the API layer (authorization error, not just UI hiding).
+
+  expected_result: >
+    Cross-doctor access to vitals data is denied at the authorization layer, not merely hidden in UI.
+
+  postconditions:
+    - No data exposed to Doctor A.
+
+  validation:
+    ui:
+      - Doctor B's patient is not listed/navigable for Doctor A.
+    api:
+      - Direct API call for Doctor B's patient vitals returns 403/401 for Doctor A's session.
+    database: []
+    logs:
+      - Unauthorized access attempt logged.
+
+  automation:
+    framework: null
+    script_location: null
+    reusable_components: [AuthZClient]
+
+  traceability:
+    requirements: [PRD-Security]
+    vp_scenario: ["§6.3 row 9 — Security/RBAC", "§6.2 NFR Security/PHI (OI-4)"]
+    risk: "Backend/API vitals ingestion = HIGH (VP §3); PHI exposure risk"
+    defects: []
+
+  execution:
+    executed_by:
+    execution_date:
+    status:
+    actual_result:
+    evidence:
+      screenshots: []
+      videos: []
+      logs: []
+
+  remarks: Must verify at the API layer, not just the UI — a UI-only check would miss an IDOR-style gap.
+
+---
+test_case:
+  id: KH-OFFLINE-034
+  title: Patient submits a reading offline; it syncs later with the correct capture timestamp and no data loss
+
+  metadata:
+    module: Offline / Sync
+    feature: Offline entry sync
+    requirement_id: PRD-2.2
+    priority: Medium
+    severity: Major
+    type: Functional
+    category: Edge
+    automation_candidate: false
+    tags: [offline, sync, exploratory]
+
+  objective: >
+    Verify a vital reading entered while the Patient App is offline syncs correctly once
+    connectivity returns, preserving the original capture timestamp with no data loss, per VP
+    §6.1 Timing/coordination matrix and §4 Exploratory Testing scope.
+
+  preconditions:
+    - Patient App able to be forced offline (airplane mode / network kill in QA env).
+
+  test_data:
+    vital: SpO2
+    value: "96%"
+
+  environment:
+    application: KeeboHealth Patient Mobile App (tricare-mobile-flutter)
+    build: Not specified (OI-1)
+    environment: QA
+
+  steps:
+    - step: 1
+      action: Go offline, complete the SpO2 task with 96%, then restore connectivity.
+      expected_result: Reading syncs automatically once online; no manual resubmission needed.
+    - step: 2
+      action: Inspect the synced record's timestamp.
+      expected_result: Capture timestamp matches the original offline entry time, not the sync time.
+
+  expected_result: >
+    Offline entries sync without loss, preserving the true capture time.
+
+  postconditions:
+    - One SpO2 record exists with the correct original timestamp.
+
+  validation:
+    ui:
+      - Task shows completed post-sync; no duplicate/lost entry.
+    api:
+      - Sync call succeeds; record timestamp = original capture time, not sync-arrival time.
+    database:
+      - Exactly one record for this reading (no duplication from retry logic).
+    logs:
+      - Sync event logged with original vs. sync timestamps distinguishable.
+
+  automation:
+    framework: null
+    script_location: null
+    reusable_components: [OfflineSyncManager]
+
+  traceability:
+    requirements: [PRD-2.2]
+    vp_scenario: ["§6.1 Timing/coordination matrix — Patient submits reading offline, syncs later", "§4 Exploratory Testing"]
+    risk: "Patient App Tasks & Manual Entry = HIGH (VP §3)"
+    defects: []
+
+  execution:
+    executed_by:
+    execution_date:
+    status:
+    actual_result:
+    evidence:
+      screenshots: []
+      videos: []
+      logs: []
+
+  remarks:
